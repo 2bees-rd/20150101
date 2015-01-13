@@ -2,8 +2,6 @@
 20150101 R&amp;D for 2bees
 
 
-- README.md
-
 - beerlocker : working copy learning nodejs
 - beerlocker-src : actual working code
 
