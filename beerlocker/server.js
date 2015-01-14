@@ -1,8 +1,16 @@
-// Get the packages we need
+// Load required packages
 var express = require('express');
 var mongoose = require('mongoose');
+var passport = require('passport');
 var bodyParser = require('body-parser');
-var Beer = require('./models/beer');
+
+var beerController = require('./controllers/beer');
+var userController = require('./controllers/user');
+var authController = require('./controllers/auth');
+
+
+// Connect to the beerlocker MongoDB
+mongoose.connect('mongodb://dev:2bees-dev1212@ds045978.mongolab.com:45978/2bees');
 
 // Create our Express application
 var app = express();
@@ -12,49 +20,29 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-// Use environment defined port or 3000
-var port = process.env.PORT || 3000;
+app.use(passport.initialize());
 
 // Create our Express router
 var router = express.Router();
 
-// Connects to mongodb
-mongoose.connect('mongodb://dev:2bees-dev1212@ds045978.mongolab.com:45978/2bees');
+// Create endpoint for /users
+router.route('/users')
+  .post(userController.postUsers)
+  .get(authController.isAuthenticated, userController.getUsers);
 
-// Initial dummy route for testing
-// http://localhost:3000/api
-router.get('/', function(req, res) {
-  res.json({ message: 'You are running dangerously low on beer!' });
-});
+// Create endpoint handlers for /beers
+router.route('/beers')
+  .post(authController.isAuthenticated, beerController.postBeers)
+  .get(authController.isAuthenticated, beerController.getBeers);
 
-// -- New Code Below -- //
-
-// Create a new route with the prefix /beers
-var beersRoute = router.route('/beers');
-
-// Create endpoint /api/beers for POSTS
-beersRoute.post(function(req, res) {
-  // Create a new instance of Beer model
-  var beer = new Beer();
-
-  // Set the beer propertis that came from POST data
-  beer.name = req.body.name;
-  beer.type = req.body.type;
-  beer.quantity = req.body.quantity;
-
-  // Save the beer and check for errors
-  beer.save(function(err) {
-    if (err)
-      res.send(err);
-
-    res.json({ message: 'Beer added to the locker!', data: beer });
-  });
-});
-
+// Create endpoint handlers for /beers/:beer_id
+router.route('/beers/:beer_id')
+  .get(authController.isAuthenticated, beerController.getBeer)
+  .put(authController.isAuthenticated, beerController.putBeer)
+  .delete(authController.isAuthenticated, beerController.deleteBeer);
 
 // Register all our routes with /api
 app.use('/api', router);
 
 // Start the server
-app.listen(port);
-console.log('Insert beer on port ' + port);
+app.listen(3000);
